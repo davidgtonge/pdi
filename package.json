@@ -1,0 +1,24 @@
+{
+  "name": "pdi",
+  "version": "1.0.0",
+  "description": "Minimal Promise based dependency injection framework",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha",
+    "test:watch": "mocha -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.1",
+    "ramda": "^0.21.0"
+  },
+  "devDependencies": {
+    "@mft/eslint-config-momentumft": "^0.2.2",
+    "babel-eslint": "^6.1.2",
+    "eslint": "^3.2.2",
+    "eslint-plugin-babel": "^3.3.0",
+    "mocha": "^3.0.1",
+    "sinon": "^1.17.5"
+  }
+}

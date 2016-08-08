@@ -1,0 +1,7 @@
+--reporter spec
+--ui bdd
+--timeout 20000
+--check-leaks
+--recursive
+--timeout 4000
+--colors

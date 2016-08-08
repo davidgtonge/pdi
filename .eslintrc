@@ -1,0 +1,7 @@
+---
+  extends: "./node_modules/@mft/eslint-config-momentumft/index.js"
+
+  rules:
+    space-after-keywords: 0
+    func-style: 0
+    camelcase: 0
