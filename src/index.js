@@ -53,6 +53,7 @@ function checkAndSortDependencies(obj) {
 
 function activationReducer(memo, items) {
   const names = pluck("name", items)
+  console.log(`Initialising ${names.join(", ")}`)
   return Promise.map(items, (item) => {
     const args = map(flip(prop)(memo), item.deps)
     return Promise.resolve(apply(item.fn, args))
@@ -68,8 +69,11 @@ function createInstance() {
   let modules = {}
   let activated = false
   let nameIdx = 0
+  const startTime = Date.now()
+  let firstAdd
 
   function add(name, deps, fn) {
+    if (!firstAdd) firstAdd = Date.now()
     if (activated) {
       throw new Error(`DI already activated - can't register: ${name} `)
     }
@@ -98,8 +102,11 @@ function createInstance() {
     if (deps && fn) {
       add(deps, fn)
     }
+    console.log("First add", firstAdd - startTime)
+    console.log("Activation started", Date.now() - startTime)
     const sorted = checkAndSortDependencies(registry)
     return startActivation(sorted).then((_modules) => {
+      console.log("Activation complete", Date.now() - startTime)
       modules = _modules
       activated = true
       return modules
