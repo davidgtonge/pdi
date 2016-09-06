@@ -99,9 +99,6 @@ function createInstance() {
     if (activated) {
       throw new Error("DI already activated")
     }
-    if (deps && fn) {
-      add(deps, fn)
-    }
     console.log("First add", firstAdd - startTime)
     console.log("Activation started", Date.now() - startTime)
     const sorted = checkAndSortDependencies(registry)
@@ -109,7 +106,13 @@ function createInstance() {
       console.log("Activation complete", Date.now() - startTime)
       modules = _modules
       activated = true
-      return modules
+      let result = true
+      if (deps && fn) {
+        console.log(`Running start function with ${deps.join(", ")}`)
+        result = apply(fn, map(flip(prop)(modules), deps))
+      }
+
+      return Promise.resolve(result)
     })
   }
   function clear() {
