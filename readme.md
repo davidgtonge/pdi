@@ -1,4 +1,6 @@
-PDI - Minimal Promise based Dependency Injection framework
+# PDI - Minimal Promise based Dependency Injection framework
+
+[![Build Status](https://travis-ci.org/davidgtonge/pdi.svg?branch=master)](https://travis-ci.org/davidgtonge/pdi)
 
 This is a simple library that provides a powerful abstraction for dealing with dependency injection both for system start up and for complex async tasks.
 
