@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.4.1",
+    "debug": "^3.0.0",
     "ramda": "^0.21.0"
   },
   "devDependencies": {

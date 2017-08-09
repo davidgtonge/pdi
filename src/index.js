@@ -1,14 +1,32 @@
 const Promise = require("bluebird")
-const {is, always, zipObj, contains, reduce, flatten, curry,
-  values, map, flip, apply, prop, compose, merge, difference,
-  pluck, filter, forEach} = require("ramda")
+const debug = require("debug")("pdi")
+const {
+  is,
+  always,
+  zipObj,
+  contains,
+  reduce,
+  flatten,
+  curry,
+  values,
+  map,
+  flip,
+  apply,
+  prop,
+  compose,
+  merge,
+  difference,
+  pluck,
+  filter,
+  forEach,
+} = require("ramda")
 
 const reducer = curry((hash, name, memo, item) => {
-  if(!hash[item]) {
+  if (!hash[item]) {
     throw new Error(`${name} depends on ${item} which hasn't been registered`)
   }
   let deps = hash[item].deps
-  if(contains(name, deps)) {
+  if (contains(name, deps)) {
     throw new Error(`Circular dependency for ${name} within ${item}`)
   }
   if (deps.length) {
@@ -17,13 +35,13 @@ const reducer = curry((hash, name, memo, item) => {
   return flatten([item, memo, deps])
 })
 
-const mapper = curry((hash, {name, deps, fn}) => {
+const mapper = curry((hash, { name, deps, fn }) => {
   const result = reduce(reducer(hash, name), [], deps)
-  return {result, deps, name, fn}
+  return { result, deps, name, fn }
 })
 
 function move(subset, from, to) {
-  forEach((item) => {
+  forEach(item => {
     const fromPos = from.indexOf(item)
     from.splice(fromPos, 1)
   }, subset)
@@ -33,9 +51,9 @@ function move(subset, from, to) {
 function sorter(array) {
   const input = array
   const output = []
-  while(input.length) {
+  while (input.length) {
     const sorted = compose(pluck("name"), flatten)(output)
-    const ready = filter(({result}) => {
+    const ready = filter(({ result }) => {
       return difference(result, sorted).length === 0
     }, input)
     move(ready, input, output)
@@ -44,17 +62,13 @@ function sorter(array) {
 }
 
 function checkAndSortDependencies(obj) {
-  return compose(
-    sorter,
-    values,
-    map(mapper(obj))
-  )(obj)
+  return compose(sorter, values, map(mapper(obj)))(obj)
 }
 
 function activationReducer(memo, items) {
   const names = pluck("name", items)
-  console.log(`Initialising ${names.join(", ")}`)
-  return Promise.map(items, (item) => {
+  debug(`Initialising ${names.join(", ")}`)
+  return Promise.map(items, item => {
     const args = map(flip(prop)(memo), item.deps)
     return Promise.resolve(apply(item.fn, args))
   }).then(compose(merge(memo), zipObj(names)))
@@ -93,22 +107,22 @@ function createInstance() {
     if (!is(Function, fn)) {
       fn = always(fn)
     }
-    registry[name] = {fn, deps, name}
+    registry[name] = { fn, deps, name }
   }
   function start(deps, fn) {
     if (activated) {
       throw new Error("DI already activated")
     }
-    console.log("First add", firstAdd - startTime)
-    console.log("Activation started", Date.now() - startTime)
+    debug("First add", firstAdd - startTime)
+    debug("Activation started", Date.now() - startTime)
     const sorted = checkAndSortDependencies(registry)
-    return startActivation(sorted).then((_modules) => {
-      console.log("Activation complete", Date.now() - startTime)
+    return startActivation(sorted).then(_modules => {
+      debug("Activation complete", Date.now() - startTime)
       modules = _modules
       activated = true
       let result = true
       if (deps && fn) {
-        console.log(`Running start function with ${deps.join(", ")}`)
+        debug(`Running start function with ${deps.join(", ")}`)
         result = apply(fn, map(flip(prop)(modules), deps))
       }
 
@@ -133,7 +147,7 @@ function createInstance() {
     checkAndSortDependencies,
   }
 
-  return {add, start, clear, __test}
+  return { add, start, clear, __test }
 }
 
 const defaultInstance = createInstance()
