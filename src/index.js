@@ -10,6 +10,7 @@ const {
   curry,
   values,
   map,
+  pick,
   flip,
   apply,
   prop,
@@ -69,8 +70,8 @@ function activationReducer(memo, items) {
   const names = pluck("name", items)
   debug(`Initialising ${names.join(", ")}`)
   return Promise.map(items, item => {
-    const args = map(flip(prop)(memo), item.deps)
-    return Promise.resolve(apply(item.fn, args))
+    const opts = pick(item.deps, memo)
+    return Promise.resolve(item.fn(opts))
   }).then(compose(merge(memo), zipObj(names)))
 }
 
@@ -78,8 +79,18 @@ function startActivation(array) {
   return Promise.reduce(array, activationReducer, {})
 }
 
-const addToRegistry = (registry, name, deps, fn) =>
-  (registry[name] = {fn, deps, name})
+const addToRegistry = (registry, name, deps, fn) => {
+  if (fn.length > 1) {
+    throw new Error(
+      `Attempted to register ${name} with a length of ${fn.length}
+      
+      pdi v2 passes all dependencies as a single object to allow developers to simulate 
+      named arugments using destructing. It therefore doesn't accept functions with 
+      a length of more than 1`
+    )
+  }
+  registry[name] = {fn, deps, name}
+}
 
 function createInstance() {
   let registry = {}

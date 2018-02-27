@@ -1,3 +1,4 @@
+/* eslint max-nested-callbacks: 0 */
 const {ok, equal, deepEqual, throws} = require("assert")
 const pdi = require("../src/index")
 const sinon = require("sinon")
@@ -92,6 +93,11 @@ describe("pdi", () => {
       deepEqual(names, ["1", "2", "4", "5", "3"])
     })
 
+    it("doesn't accept functions who require multiple arguments", () => {
+      throws(() => {
+        pdi.add("1", [], (a, b) => [a, b])
+      }, /single object/i)
+    })
   })
 
   describe("activation", () => {
@@ -101,7 +107,6 @@ describe("pdi", () => {
           pdi.start()
         }, /already activated/i)
       })
-
     })
 
     it("calls each registered function", () => {
@@ -122,7 +127,7 @@ describe("pdi", () => {
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
       return pdi.start().then(() => {
-        ok(fn1.calledWith(foo))
+        ok(fn1.calledWith({"2": foo}))
       })
     })
 
@@ -136,9 +141,8 @@ describe("pdi", () => {
       pdi.add("2", fn2)
       pdi.add("3", fn3)
       return pdi.start().then(() => {
-        ok(fn1.calledWith(foo, foo2))
+        ok(fn1.calledWith({"2": foo, "3": foo2}))
       })
     })
   })
-
 })
