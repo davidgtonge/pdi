@@ -120,6 +120,41 @@ describe("pdi", () => {
       })
     })
 
+    it("resolves with all dependencies", () => {
+      const fn1 = () => "foo"
+      const fn2 = () => "bar"
+      pdi.add("1", ["2"], fn1)
+      pdi.add("2", fn2)
+      return pdi.start().then(result => {
+        equal(result["1"], "foo")
+        equal(result["2"], "bar")
+      })
+    })
+
+    it("rejects when dependency throws", () => {
+      const fn1 = () => {
+        throw new Error("error in dep")
+      }
+      const fn2 = () => "bar"
+      pdi.add("1", ["2"], fn1)
+      pdi.add("2", fn2)
+      return pdi.start().catch(err => {
+        ok(err)
+        equal(err.message, "error in dep")
+      })
+    })
+
+    it("rejects when dependency rejects", () => {
+      const fn1 = () => Promise.reject(new Error("error in dep"))
+      const fn2 = () => "bar"
+      pdi.add("1", ["2"], fn1)
+      pdi.add("2", fn2)
+      return pdi.start().catch(err => {
+        ok(err)
+        equal(err.message, "error in dep")
+      })
+    })
+
     it("calls each registered function with deps", () => {
       const foo = Math.random()
       const fn1 = sinon.stub()

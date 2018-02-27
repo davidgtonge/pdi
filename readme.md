@@ -86,8 +86,8 @@ flow.add("user", ["userId"], getUser)
 flow.add("friends", ["user"], getFriends)
 flow.add("result", ["friends", "user"], mergeFriendsAndUser)
 flow
-  .start(["result"])
-  .then(result => res.send(result))
+  .start()
+  .then(({ result }) => res.send(result))
   .catch(err => res.sendStatus(500))
 ```
 

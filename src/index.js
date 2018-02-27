@@ -11,9 +11,6 @@ const {
   values,
   map,
   pick,
-  flip,
-  apply,
-  prop,
   compose,
   merge,
   difference,
@@ -121,7 +118,7 @@ function createInstance() {
     }
     return addToRegistry(registry, name, deps, fn)
   }
-  function start(deps, fn) {
+  function start() {
     if (activated) {
       throw new Error("DI already activated")
     }
@@ -132,13 +129,7 @@ function createInstance() {
       debug("Activation complete", Date.now() - startTime)
       modules = _modules
       activated = true
-      let result = true
-      if (deps && fn) {
-        debug(`Running start function with ${deps.join(", ")}`)
-        result = apply(fn, map(flip(prop)(modules), deps))
-      }
-
-      return Promise.resolve(result)
+      return Object.assign({}, modules)
     })
   }
   function clear() {
