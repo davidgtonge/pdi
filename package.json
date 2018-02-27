@@ -5,21 +5,20 @@
   "main": "src/index.js",
   "scripts": {
     "test": "mocha",
-    "test:watch": "mocha -w"
+    "test:watch": "mocha -w",
+    "lint": "eslint src/"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.4.1",
-    "debug": "^3.0.0",
-    "ramda": "^0.21.0"
+    "bluebird": "^3.5.1",
+    "debug": "^3.1.0",
+    "ramda": "^0.25.0"
   },
   "devDependencies": {
-    "@mft/eslint-config-momentumft": "^0.2.2",
-    "babel-eslint": "^6.1.2",
-    "eslint": "^3.2.2",
-    "eslint-plugin-babel": "^3.3.0",
-    "mocha": "^3.0.1",
-    "sinon": "^1.17.5"
+    "@mft/eslint-config-momentumft": "^3.1.5",
+    "eslint": "^4.18.1",
+    "mocha": "^5.0.1",
+    "sinon": "^4.4.2"
   }
 }

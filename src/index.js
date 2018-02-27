@@ -35,9 +35,9 @@ const reducer = curry((hash, name, memo, item) => {
   return flatten([item, memo, deps])
 })
 
-const mapper = curry((hash, { name, deps, fn }) => {
+const mapper = curry((hash, {name, deps, fn}) => {
   const result = reduce(reducer(hash, name), [], deps)
-  return { result, deps, name, fn }
+  return {result, deps, name, fn}
 })
 
 function move(subset, from, to) {
@@ -53,7 +53,7 @@ function sorter(array) {
   const output = []
   while (input.length) {
     const sorted = compose(pluck("name"), flatten)(output)
-    const ready = filter(({ result }) => {
+    const ready = filter(({result}) => {
       return difference(result, sorted).length === 0
     }, input)
     move(ready, input, output)
@@ -78,6 +78,9 @@ function startActivation(array) {
   return Promise.reduce(array, activationReducer, {})
 }
 
+const addToRegistry = (registry, name, deps, fn) =>
+  (registry[name] = {fn, deps, name})
+
 function createInstance() {
   let registry = {}
   let modules = {}
@@ -93,21 +96,19 @@ function createInstance() {
     }
     // (array, fn) = side effect function
     if (is(Array, name) && is(Function, deps)) {
-      fn = deps
-      deps = name
-      name = "__pdi_side_effect_" + nameIdx++
-    }
-    if (!fn) {
-      fn = deps
-      deps = []
+      nameIdx += 1
+      return addToRegistry(registry, "__pdi_side_effect_" + nameIdx, name, deps)
     }
     if (registry[name]) {
       throw new Error(`Attempted to register module: ${name} multiple times`)
     }
-    if (!is(Function, fn)) {
-      fn = always(fn)
+    if (!fn) {
+      return addToRegistry(registry, name, [], deps)
     }
-    registry[name] = { fn, deps, name }
+    if (!is(Function, fn)) {
+      return addToRegistry(registry, name, deps, always(fn))
+    }
+    return addToRegistry(registry, name, deps, fn)
   }
   function start(deps, fn) {
     if (activated) {
@@ -147,7 +148,7 @@ function createInstance() {
     checkAndSortDependencies,
   }
 
-  return { add, start, clear, __test }
+  return {add, start, clear, __test}
 }
 
 const defaultInstance = createInstance()
