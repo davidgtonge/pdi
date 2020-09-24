@@ -82,7 +82,7 @@ If this function is called before activation, then there are checks made when ca
 
 ### `create`
 
-This function is useful for where the DI container will be used to perform a particular operation, rather then for system start-up. It returns a DI container with the `add`, `start` and `clear` methods.
+This function is useful for where the DI container will be used to perform a particular operation, rather then for system start-up. It returns a DI container with the `add`, `start`, `strict` and `clear` methods.
 
 While being small this library is powerful enough to be used for async flow
 control, for example:
