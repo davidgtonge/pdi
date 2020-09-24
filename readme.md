@@ -71,6 +71,15 @@ The function sorts all previously registered factory functions according to the 
 
 This function clears all previously registered functions, it is mainly useful for testing.
 
+
+### `strict`
+
+If this function is called before activation, then there are checks made when calling the factory fucntion, the following will cause an error to be thrown
+
+ * If the factory tries to access a property that hasn't been depended on
+ * If a property is not accessed even though it has been depended on
+
+
 ### `create`
 
 This function is useful for where the DI container will be used to perform a particular operation, rather then for system start-up. It returns a DI container with the `add`, `start` and `clear` methods.

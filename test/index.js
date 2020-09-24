@@ -1,5 +1,5 @@
 /* eslint max-nested-callbacks: 0 */
-const {ok, equal, deepEqual, throws} = require("assert")
+const {ok, strictEqual, deepStrictEqual, throws, rejects} = require("assert")
 const pdi = require("../src/index")
 const sinon = require("sinon")
 const {pluck, flatten, compose} = require("ramda")
@@ -16,9 +16,9 @@ describe("pdi", () => {
       const deps = []
       pdi.add(name, deps, fn)
       const registry = pdi.__test.getRegistry()
-      equal(registry[name].name, name)
-      equal(registry[name].fn, fn)
-      equal(registry[name].deps, deps)
+      strictEqual(registry[name].name, name)
+      strictEqual(registry[name].fn, fn)
+      strictEqual(registry[name].deps, deps)
     })
 
     it("add with 2 args", () => {
@@ -26,18 +26,21 @@ describe("pdi", () => {
       const fn = function() {}
       pdi.add(name, fn)
       const registry = pdi.__test.getRegistry()
-      equal(registry[name].name, name)
-      equal(registry[name].fn, fn)
-      deepEqual(registry[name].deps, [])
+      strictEqual(registry[name].name, name)
+      strictEqual(registry[name].fn, fn)
+      deepStrictEqual(registry[name].deps, [])
     })
 
     it("throws when same module registered twice", () => {
       const name = "NAME"
       const fn = function() {}
       pdi.add(name, fn)
-      throws(() => {
-        pdi.add(name, fn)
-      })
+      throws(
+        () => {
+          pdi.add(name, fn)
+        },
+        {message: "Attempted to register module: NAME multiple times"},
+      )
     })
 
     it("throws when registing after starting", () => {
@@ -45,9 +48,12 @@ describe("pdi", () => {
       const fn = function() {}
       pdi.add(name, fn)
       return pdi.start().then(() => {
-        throws(() => {
-          pdi.add("something", fn)
-        })
+        throws(
+          () => {
+            pdi.add("something", fn)
+          },
+          {message: "DI already activated - can't register: something"},
+        )
       })
     })
   })
@@ -58,8 +64,8 @@ describe("pdi", () => {
       pdi.add("2", sinon.stub())
       const registry = pdi.__test.getRegistry()
       const sorted = pdi.__test.checkAndSortDependencies(registry)
-      equal(sorted[0][0].name, "2")
-      equal(sorted[1][0].name, "1")
+      strictEqual(sorted[0][0].name, "2")
+      strictEqual(sorted[1][0].name, "1")
     })
 
     it("throws on circular dependencies", () => {
@@ -89,8 +95,8 @@ describe("pdi", () => {
       const registry = pdi.__test.getRegistry()
       const sorted = pdi.__test.checkAndSortDependencies(registry)
       const names = compose(pluck("name"), flatten)(sorted)
-      equal(sorted.length, 4)
-      deepEqual(names, ["1", "2", "4", "5", "3"])
+      strictEqual(sorted.length, 4)
+      deepStrictEqual(names, ["1", "2", "4", "5", "3"])
     })
 
     it("doesn't accept functions who require multiple arguments", () => {
@@ -115,8 +121,8 @@ describe("pdi", () => {
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
       return pdi.start().then(() => {
-        equal(fn1.callCount, 1)
-        equal(fn2.callCount, 1)
+        strictEqual(fn1.callCount, 1)
+        strictEqual(fn2.callCount, 1)
       })
     })
 
@@ -125,9 +131,9 @@ describe("pdi", () => {
       const fn2 = () => "bar"
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
-      return pdi.start().then(result => {
-        equal(result["1"], "foo")
-        equal(result["2"], "bar")
+      return pdi.start().then((result) => {
+        strictEqual(result["1"], "foo")
+        strictEqual(result["2"], "bar")
       })
     })
 
@@ -138,10 +144,7 @@ describe("pdi", () => {
       const fn2 = () => "bar"
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
-      return pdi.start().catch(err => {
-        ok(err)
-        equal(err.message, "error in dep")
-      })
+      return rejects(() => pdi.start(), {message: "error in dep"})
     })
 
     it("rejects when dependency rejects", () => {
@@ -149,10 +152,7 @@ describe("pdi", () => {
       const fn2 = () => "bar"
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
-      return pdi.start().catch(err => {
-        ok(err)
-        equal(err.message, "error in dep")
-      })
+      return rejects(() => pdi.start(), {message: "error in dep"})
     })
 
     it("calls each registered function with deps", () => {
@@ -162,7 +162,7 @@ describe("pdi", () => {
       pdi.add("1", ["2"], fn1)
       pdi.add("2", fn2)
       return pdi.start().then(() => {
-        ok(fn1.calledWith({"2": foo}))
+        ok(fn1.calledWith({2: foo}))
       })
     })
 
@@ -176,8 +176,63 @@ describe("pdi", () => {
       pdi.add("2", fn2)
       pdi.add("3", fn3)
       return pdi.start().then(() => {
-        ok(fn1.calledWith({"2": foo, "3": foo2}))
+        ok(fn1.calledWith({2: foo, 3: foo2}))
+      })
+    })
+  })
+
+  describe("strict mode", () => {
+    it("throws if a property is accessed that has not been depended on", () => {
+      pdi.strict()
+      const foo = Math.random()
+      const foo2 = Math.random()
+      const fn1 = ({b, c, d}) => [b, c, d]
+      const fn2 = sinon.stub().returns(foo)
+      const fn3 = sinon.stub().returns(foo2)
+      pdi.add("a", ["b", "c"], fn1)
+      pdi.add("b", fn2)
+      pdi.add("c", fn3)
+      return rejects(() => pdi.start(), {message: "Invalid property access: d"})
+    })
+
+    it("throws if a property is depended on but not accessed", () => {
+      pdi.strict()
+      const foo = Math.random()
+      const foo2 = Math.random()
+      const fn1 = ({b}) => [b]
+      const fn2 = sinon.stub().returns(foo)
+      const fn3 = sinon.stub().returns(foo2)
+      pdi.add("a", ["b", "c"], fn1)
+      pdi.add("b", fn2)
+      pdi.add("c", fn3)
+      return rejects(() => pdi.start(), {
+        message: "Depended on property not accessed: c",
+      })
+    })
+
+    it("throws if a property is depended on but not accessed in an async fn", () => {
+      pdi.strict()
+      const foo = Math.random()
+      const foo2 = Math.random()
+      const fn1 = async ({b}) => Promise.resolve([b])
+      const fn2 = sinon.stub().returns(foo)
+      const fn3 = sinon.stub().returns(foo2)
+      pdi.add("a", ["b", "c"], fn1)
+      pdi.add("b", fn2)
+      pdi.add("c", fn3)
+      return rejects(() => pdi.start(), {
+        message: "Depended on property not accessed: c",
       })
     })
   })
 })
+
+/*
+Create a proxy and throw if invalid property is accessed
+Log if property is not accessed.
+
+Also consider how it can handle things like ids
+e.g. whenever log gets injected
+
+
+*/

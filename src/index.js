@@ -39,7 +39,7 @@ const mapper = curry((hash, {name, deps, fn}) => {
 })
 
 function move(subset, from, to) {
-  forEach(item => {
+  forEach((item) => {
     const fromPos = from.indexOf(item)
     from.splice(fromPos, 1)
   }, subset)
@@ -63,17 +63,41 @@ function checkAndSortDependencies(obj) {
   return compose(sorter, values, map(mapper(obj)))(obj)
 }
 
-function activationReducer(memo, items) {
+const activationReducer = (strictMode) => (memo, items) => {
   const names = pluck("name", items)
   debug(`Initialising ${names.join(", ")}`)
-  return Promise.map(items, item => {
-    const opts = pick(item.deps, memo)
-    return Promise.resolve(item.fn(opts))
+  return Promise.map(items, (item) => {
+    const _opts = pick(item.deps, memo)
+    if (!strictMode) {
+      return Promise.resolve(item.fn(_opts))
+    }
+
+    const accessed = []
+    const opts = new Proxy(_opts, {
+      get(target, prop) {
+        if (target[prop]) {
+          accessed.push(prop)
+          return target[prop]
+        }
+        throw new Error(`Invalid property access: ${prop}`)
+      },
+    })
+
+    const result = item.fn(opts)
+
+    const notAccessed = difference(item.deps, accessed)
+    if (notAccessed.length) {
+      throw new Error(
+        `Depended on property not accessed: ${notAccessed.join(",")}`,
+      )
+    }
+
+    return Promise.resolve(result)
   }).then(compose(merge(memo), zipObj(names)))
 }
 
-function startActivation(array) {
-  return Promise.reduce(array, activationReducer, {})
+function startActivation(array, strictMode) {
+  return Promise.reduce(array, activationReducer(strictMode), {})
 }
 
 const addToRegistry = (registry, name, deps, fn) => {
@@ -83,7 +107,7 @@ const addToRegistry = (registry, name, deps, fn) => {
       
       pdi v2 passes all dependencies as a single object to allow developers to simulate 
       named arugments using destructing. It therefore doesn't accept functions with 
-      a length of more than 1`
+      a length of more than 1`,
     )
   }
   registry[name] = {fn, deps, name}
@@ -94,13 +118,21 @@ function createInstance() {
   let modules = {}
   let activated = false
   let nameIdx = 0
+  let strictMode = false
   const startTime = Date.now()
   let firstAdd
+
+  const strict = () => {
+    if (activated) {
+      throw new Error("Can't set strict mode after activation")
+    }
+    strictMode = true
+  }
 
   function add(name, deps, fn) {
     if (!firstAdd) firstAdd = Date.now()
     if (activated) {
-      throw new Error(`DI already activated - can't register: ${name} `)
+      throw new Error(`DI already activated - can't register: ${name}`)
     }
     // (array, fn) = side effect function
     if (is(Array, name) && is(Function, deps)) {
@@ -125,7 +157,7 @@ function createInstance() {
     debug("First add", firstAdd - startTime)
     debug("Activation started", Date.now() - startTime)
     const sorted = checkAndSortDependencies(registry)
-    return startActivation(sorted).then(_modules => {
+    return startActivation(sorted, strictMode).then((_modules) => {
       debug("Activation complete", Date.now() - startTime)
       modules = _modules
       activated = true
@@ -134,6 +166,7 @@ function createInstance() {
   }
   function clear() {
     activated = false
+    strictMode = false
     registry = {}
     modules = {}
   }
@@ -150,7 +183,7 @@ function createInstance() {
     checkAndSortDependencies,
   }
 
-  return {add, start, clear, __test}
+  return {add, start, clear, strict, __test}
 }
 
 const defaultInstance = createInstance()
