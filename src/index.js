@@ -79,7 +79,7 @@ const activationReducer = (strictMode) => (memo, items) => {
           accessed.push(prop)
           return target[prop]
         }
-        throw new Error(`Invalid property access: ${prop}`)
+        throw new Error(`Invalid property access (${prop}) in ${item.name}`)
       },
     })
 
@@ -88,7 +88,7 @@ const activationReducer = (strictMode) => (memo, items) => {
     const notAccessed = difference(item.deps, accessed)
     if (notAccessed.length) {
       throw new Error(
-        `Depended on property not accessed: ${notAccessed.join(",")}`,
+        `Depended on property (${notAccessed.join(",")}) not accessed in ${item.name}`,
       )
     }
 

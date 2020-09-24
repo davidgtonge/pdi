@@ -192,7 +192,7 @@ describe("pdi", () => {
       pdi.add("a", ["b", "c"], fn1)
       pdi.add("b", fn2)
       pdi.add("c", fn3)
-      return rejects(() => pdi.start(), {message: "Invalid property access: d"})
+      return rejects(() => pdi.start(), {message: "Invalid property access (d) in a"})
     })
 
     it("throws if a property is depended on but not accessed", () => {
@@ -206,7 +206,7 @@ describe("pdi", () => {
       pdi.add("b", fn2)
       pdi.add("c", fn3)
       return rejects(() => pdi.start(), {
-        message: "Depended on property not accessed: c",
+        message: "Depended on property (c) not accessed in a",
       })
     })
 
@@ -221,7 +221,7 @@ describe("pdi", () => {
       pdi.add("b", fn2)
       pdi.add("c", fn3)
       return rejects(() => pdi.start(), {
-        message: "Depended on property not accessed: c",
+        message: "Depended on property (c) not accessed in a",
       })
     })
   })
