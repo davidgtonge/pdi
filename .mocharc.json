@@ -1,0 +1,8 @@
+{
+  "reporter": "spec",
+  "ui": "bdd",
+  "timeout": 4000,
+  "checkLeaks": true,
+  "color": true,
+  "spec": ["test/**/*.test.js"]
+}
