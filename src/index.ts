@@ -106,7 +106,7 @@ function activationReducer(strictMode: boolean) {
             if (typeof prop !== "string") {
               return undefined
             }
-            if (target[prop]) {
+            if (prop in target) {
               accessed.push(prop)
               return target[prop]
             }
@@ -156,9 +156,9 @@ function addToRegistry(
   if (fn.length > 1) {
     throw new Error(
       `Attempted to register ${name} with a length of ${fn.length}
-      
-      pdi v2 passes all dependencies as a single object to allow developers to simulate 
-      named arugments using destructing. It therefore doesn't accept functions with 
+
+      pdi v2 passes all dependencies as a single object to allow developers to simulate
+      named arugments using destructing. It therefore doesn't accept functions with
       a length of more than 1`,
     )
   }
