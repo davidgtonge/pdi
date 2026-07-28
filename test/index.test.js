@@ -180,6 +180,17 @@ describe("pdi", () => {
   })
 
   describe("strict mode", () => {
+    it("allows accessing properties with falsy values", () => {
+      pdi.strict()
+      pdi.add("a", () => null)
+      pdi.add("b", () => undefined)
+      pdi.add("c", () => 0)
+      pdi.add("d", ["a", "b", "c"], ({a, b, c}) => [a, b, c])
+      return pdi.start().then(({d}) => {
+        deepStrictEqual(d, [null, undefined, 0])
+      })
+    })
+
     it("throws if a property is accessed that has not been depended on", () => {
       pdi.strict()
       const foo = Math.random()
